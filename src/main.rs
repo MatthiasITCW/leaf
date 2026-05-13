@@ -34,7 +34,10 @@ const MAX_STDIN_BYTES: usize = 8 * 1024 * 1024;
 #[cfg(test)]
 pub(crate) use config::{config_path, LeafConfig};
 #[cfg(test)]
-pub(crate) use editor::{binary_name, classify, resolve_editor, split_editor_cmd, EditorKind};
+pub(crate) use editor::{
+    binary_name, classify, resolve_editor, split_editor_cmd, try_new_tab_command, EditorKind,
+    TerminalEmulator,
+};
 #[cfg(test)]
 pub(crate) use markdown::toc::{
     normalize_toc, should_hide_single_h1, should_promote_h2_when_no_h1, toc_display_level, TocEntry,

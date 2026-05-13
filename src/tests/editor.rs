@@ -1,4 +1,5 @@
 use crate::*;
+use std::path::Path;
 
 #[test]
 fn binary_name_simple() {
@@ -159,6 +160,53 @@ fn classify_windows_path_with_spaces() {
         classify(r"C:\Program Files\Notepad++\notepad++.exe"),
         EditorKind::Gui
     );
+}
+
+fn mac_tab_script(editor: &str, file: &str, term_program: &str) -> String {
+    let emulator = TerminalEmulator::MacTerminal(term_program.to_string());
+    let cmd = try_new_tab_command(editor, Path::new(file), &emulator).unwrap();
+    let args: Vec<_> = cmd.get_args().collect();
+    args[1].to_str().unwrap().to_string()
+}
+
+#[test]
+fn new_tab_command_apple_terminal_has_printf() {
+    let script = mac_tab_script("nano", "/tmp/test.md", "Apple_Terminal");
+    assert!(script.contains("printf"));
+    assert!(script.contains("do script"));
+    assert!(script.contains("nano"));
+    assert!(script.contains("/tmp/test.md"));
+}
+
+#[test]
+fn new_tab_command_iterm_no_printf() {
+    let script = mac_tab_script("nano", "/tmp/test.md", "iTerm.app");
+    assert!(!script.contains("printf"));
+    assert!(script.contains("create tab with default profile command"));
+    assert!(script.contains("nano"));
+    assert!(script.contains("/tmp/test.md"));
+}
+
+#[test]
+fn new_tab_command_iterm2_no_printf() {
+    let script = mac_tab_script("vim", "/tmp/test.md", "iTerm2");
+    assert!(!script.contains("printf"));
+    assert!(script.contains("create tab with default profile command"));
+    assert!(script.contains("vim"));
+}
+
+#[test]
+fn new_tab_command_iterm_file_with_spaces() {
+    let script = mac_tab_script("nano", "/tmp/my file.md", "iTerm.app");
+    assert!(!script.contains("printf"));
+    assert!(script.contains("my file.md"));
+}
+
+#[test]
+fn new_tab_command_apple_terminal_file_with_spaces() {
+    let script = mac_tab_script("nano", "/tmp/my file.md", "Apple_Terminal");
+    assert!(script.contains("printf"));
+    assert!(script.contains("my file.md"));
 }
 
 #[test]

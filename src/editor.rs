@@ -276,15 +276,15 @@ pub(crate) fn try_new_tab_command(
             };
             let escaped_editor = editor.replace('\\', "\\\\").replace('"', "\\\"");
             let escaped_file = file_str.replace('\\', "\\\\").replace('"', "\\\"");
-            let title_seq = r#"printf '\\033]0;leaf editor\\007'; "#;
             let script = if tp == "Apple_Terminal" {
+                let title_seq = r#"printf '\\033]0;leaf editor\\007'; "#;
                 format!(
                     "tell application \"{app_name}\" to do script \"{title_seq}{escaped_editor} {escaped_file}\""
                 )
             } else {
                 format!(
                     "tell application \"{app_name}\" to tell current window to \
-                     create tab with default profile command \"{title_seq}{escaped_editor} {escaped_file}\""
+                     create tab with default profile command \"{escaped_editor} {escaped_file}\""
                 )
             };
             let mut cmd = Command::new("osascript");
