@@ -10,6 +10,7 @@ use std::{
 };
 
 const GITHUB_API_BASE: &str = "https://api.github.com/repos/RivoLink/leaf";
+const GITHUB_API_BASE_FALLBACK: &str = "https://api.github.com/repos/leaf-mg/leaf";
 const GITHUB_API_RELEASES_LATEST_PATH: &str = "/releases/latest";
 const CHECKSUMS_ASSET_NAME: &str = "checksums.txt";
 const HTTP_TIMEOUT: Duration = Duration::from_secs(20);
@@ -88,12 +89,17 @@ pub(crate) fn asset_name_for_target(os: &str, arch: &str) -> Option<&'static str
 }
 
 fn fetch_latest_release() -> Result<GithubRelease> {
+    match fetch_release_from(GITHUB_API_BASE) {
+        Ok(release) => Ok(release),
+        Err(_) => fetch_release_from(GITHUB_API_BASE_FALLBACK),
+    }
+}
+
+fn fetch_release_from(base_url: &str) -> Result<GithubRelease> {
     let client = http_client()?;
 
     let response = client
-        .get(format!(
-            "{GITHUB_API_BASE}{GITHUB_API_RELEASES_LATEST_PATH}"
-        ))
+        .get(format!("{base_url}{GITHUB_API_RELEASES_LATEST_PATH}"))
         .header(reqwest::header::USER_AGENT, "leaf-updater")
         .send()
         .context("Cannot reach GitHub releases API")?;
