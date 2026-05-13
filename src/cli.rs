@@ -8,6 +8,7 @@ pub(crate) struct CliOptions {
     pub(crate) watch: bool,
     pub(crate) update: bool,
     pub(crate) config: bool,
+    pub(crate) auto_complete: bool,
     pub(crate) debug_input: bool,
     pub(crate) print_help: bool,
     pub(crate) print_version: bool,
@@ -32,7 +33,8 @@ pub(crate) fn usage_text() -> &'static str {
      \x20     --inline [SPEC]        Render to stdout (no TUI) [ansi|plain][:<width>]\n\
      \x20     --picker               Open the file browser picker\n\
      \x20     --config               Open configuration file in editor\n\
-     \x20     --update               Update leaf to the latest version"
+     \x20     --update               Update leaf to the latest version\n\
+     \x20     --auto-complete        Install shell completions for leaf"
 }
 
 pub(crate) fn version_text() -> &'static str {
@@ -67,6 +69,7 @@ pub(crate) fn parse_cli(args: &[String]) -> Result<CliOptions> {
             "--watch" | "-w" => options.watch = true,
             "--update" => options.update = true,
             "--config" => options.config = true,
+            "--auto-complete" => options.auto_complete = true,
             "--debug-input" => options.debug_input = true,
             "--help" | "-h" => options.print_help = true,
             "--version" | "-V" => options.print_version = true,
@@ -113,29 +116,25 @@ pub(crate) fn parse_cli(args: &[String]) -> Result<CliOptions> {
         }
     }
 
-    if options.update {
-        let has_non_update_flags = options.watch
-            || options.picker
-            || options.debug_input
-            || options.config
-            || options.file_arg.is_some()
-            || options.theme.is_some()
-            || options.editor.is_some();
-        if has_non_update_flags {
-            anyhow::bail!("--update must be used on its own");
+    let standalone = [
+        (options.update, "--update"),
+        (options.config, "--config"),
+        (options.auto_complete, "--auto-complete"),
+    ];
+    let standalone_count = standalone.iter().filter(|(set, _)| *set).count();
+    for &(set, name) in &standalone {
+        if !set {
+            continue;
         }
-    }
-
-    if options.config {
-        let has_non_config_flags = options.watch
+        let has_other = standalone_count > 1
+            || options.watch
             || options.picker
             || options.debug_input
-            || options.update
             || options.file_arg.is_some()
             || options.theme.is_some()
             || options.editor.is_some();
-        if has_non_config_flags {
-            anyhow::bail!("--config must be used on its own");
+        if has_other {
+            anyhow::bail!("{name} must be used on its own");
         }
     }
 

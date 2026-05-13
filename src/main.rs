@@ -6,6 +6,7 @@ use syntect::{highlighting::ThemeSet, parsing::SyntaxSet};
 mod app;
 mod cli;
 mod clipboard;
+mod completions;
 mod config;
 mod editor;
 mod inline;
@@ -111,6 +112,10 @@ fn main() -> Result<()> {
     }
     if options.config {
         config::run_config()?;
+        return Ok(());
+    }
+    if options.auto_complete {
+        completions::install_completions()?;
         return Ok(());
     }
     let CliOptions {

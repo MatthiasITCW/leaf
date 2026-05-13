@@ -135,6 +135,16 @@ find . -name '*.md' | fzf --preview 'leaf --inline ansi {}'
 find . -name '*.md' | fzf --preview 'leaf --inline ansi:$FZF_PREVIEW_COLUMNS {}'
 ```
 
+## Shell Completions
+
+Enable Tab completion for all arguments:
+
+```bash
+leaf --auto-complete
+```
+
+Supports bash, zsh, fish, and PowerShell. Restart your shell to activate.
+
 ## Configuration
 
 Set default values for theme, editor, and watch mode via `config.toml`:
@@ -237,6 +247,7 @@ See [`gruvbox.toml`](gruvbox.toml) for a complete example with all available col
 - **LaTeX support** — Inline, block, and `latex` / `tex` code blocks rendered as formulas.
 - **Navigation** — TOC sidebar, active section tracking, heading jumps, and search.
 - **Terminal UX** — Theme picker, help popup, file path popup, mouse and keyboard support.
+- **Shell completions** — Tab completion for bash, zsh, fish, and PowerShell via `leaf --auto-complete`.
 - **CLI friendly** — stdin support and `leaf --update` with SHA256 verification.
 
 ## Typical AI Workflow

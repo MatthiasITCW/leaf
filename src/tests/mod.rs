@@ -12,6 +12,7 @@ use syntect::{
 };
 
 mod app;
+mod completions;
 mod config;
 mod editor;
 mod file_fuzzy;
