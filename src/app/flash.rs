@@ -27,6 +27,13 @@ pub(crate) enum LinkFlash {
     CopyFailed,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) enum PathFlash {
+    RelativeCopied,
+    AbsoluteCopied,
+    CopyFailed,
+}
+
 impl App {
     pub(crate) fn set_editor_flash(&mut self, flash: EditorFlash) {
         self.editor_flash = Some((flash, Instant::now()));
@@ -114,6 +121,18 @@ impl App {
 
     pub(crate) fn clear_link_flash(&mut self) {
         self.link_flash = None;
+    }
+
+    pub(crate) fn set_path_flash(&mut self, flash: PathFlash) {
+        self.path_flash = Some((flash, Instant::now()));
+    }
+
+    pub(crate) fn path_flash(&self) -> Option<&(PathFlash, Instant)> {
+        self.path_flash.as_ref()
+    }
+
+    pub(crate) fn clear_path_flash(&mut self) {
+        self.path_flash = None;
     }
 
     pub(crate) fn clear_reload_flash(&mut self) {

@@ -22,6 +22,7 @@ const EDITOR_FLASH_DURATION: Duration = Duration::from_millis(FLASH_DURATION_MS)
 const WATCH_FLASH_DURATION: Duration = Duration::from_millis(FLASH_DURATION_MS);
 const CONFIG_FLASH_DURATION: Duration = Duration::from_millis(FLASH_DURATION_MS);
 const LINK_FLASH_DURATION: Duration = Duration::from_millis(FLASH_DURATION_MS);
+const PATH_FLASH_DURATION: Duration = Duration::from_millis(FLASH_DURATION_MS);
 const DOUBLE_CLICK_THRESHOLD: Duration = Duration::from_millis(400);
 const MOUSE_SCROLL_STEP: usize = 3;
 
@@ -133,6 +134,8 @@ pub(crate) fn run(
             watch_flash_timeout,
             config_flash_timeout,
             link_flash_timeout,
+            app.path_flash()
+                .and_then(|(_, started)| PATH_FLASH_DURATION.checked_sub(started.elapsed())),
             resize_timeout,
         ]
         .into_iter()
@@ -260,6 +263,13 @@ pub(crate) fn run(
         if let Some((_, started)) = app.link_flash() {
             if started.elapsed() >= LINK_FLASH_DURATION {
                 app.clear_link_flash();
+                needs_redraw = true;
+            }
+        }
+
+        if let Some((_, started)) = app.path_flash() {
+            if started.elapsed() >= PATH_FLASH_DURATION {
+                app.clear_path_flash();
                 needs_redraw = true;
             }
         }

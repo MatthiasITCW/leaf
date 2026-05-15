@@ -29,10 +29,10 @@ mod content;
 pub(crate) use content::{FileChange, FileState};
 
 mod flash;
-pub(crate) use flash::{EditorFlash, LinkFlash, WatchFlash, FLASH_DURATION_MS};
+pub(crate) use flash::{EditorFlash, LinkFlash, PathFlash, WatchFlash, FLASH_DURATION_MS};
 
 mod popups;
-pub(crate) use popups::EditorPickerState;
+pub(crate) use popups::{EditorPickerState, PathKind};
 
 mod links;
 
@@ -60,6 +60,7 @@ pub(crate) struct StatusCacheKey {
     watch_error: bool,
     config_flash_active: bool,
     link_flash_active: bool,
+    path_flash_active: bool,
 }
 
 pub(crate) struct AppConfig {
@@ -113,7 +114,12 @@ pub(crate) struct App {
     pub(crate) link_spans_by_line: HashMap<usize, Vec<LinkSpan>>,
     pub(crate) hovered_link: Option<(usize, usize)>,
     link_flash: Option<(LinkFlash, Instant)>,
+    path_flash: Option<(PathFlash, Instant)>,
     pub(crate) last_click: Option<(u16, u16, Instant)>,
+    pub(super) path_copy_flash: Option<(PathKind, bool, Instant)>,
+    pub(super) path_popup_hover: Option<PathKind>,
+    pub(crate) path_popup_rel_area: Option<Rect>,
+    pub(crate) path_popup_abs_area: Option<Rect>,
     numkey_cycle: Option<NumkeyCycleState>,
     reverse_mode: bool,
     pub(super) file_mode: bool,
@@ -242,7 +248,12 @@ impl App {
             link_spans_by_line: HashMap::new(),
             hovered_link: None,
             link_flash: None,
+            path_flash: None,
             last_click: None,
+            path_copy_flash: None,
+            path_popup_hover: None,
+            path_popup_rel_area: None,
+            path_popup_abs_area: None,
             numkey_cycle: None,
             reverse_mode: false,
             file_mode: false,
@@ -454,6 +465,11 @@ impl App {
                 .unwrap_or(false),
             link_flash_active: self
                 .link_flash
+                .as_ref()
+                .map(|(_, t)| t.elapsed() < Duration::from_millis(FLASH_DURATION_MS))
+                .unwrap_or(false),
+            path_flash_active: self
+                .path_flash
                 .as_ref()
                 .map(|(_, t)| t.elapsed() < Duration::from_millis(FLASH_DURATION_MS))
                 .unwrap_or(false),

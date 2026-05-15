@@ -122,7 +122,7 @@ pub(super) fn handle_key_event(
                     return Ok(HandleResult::Break);
                 }
             }
-            KeyCode::Char('p')
+            KeyCode::Char('p') | KeyCode::Char('q')
                 if key.modifiers.contains(KeyModifiers::CONTROL) && app.is_fuzzy_file_picker() =>
             {
                 if has_content {
@@ -198,6 +198,12 @@ pub(super) fn handle_key_event(
             KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => {
                 app.close_path_popup();
             }
+            KeyCode::Char('r') | KeyCode::Char('R') => {
+                app.copy_path_relative();
+            }
+            KeyCode::Char('a') | KeyCode::Char('A') => {
+                app.copy_path_absolute();
+            }
             _ => state_changed = false,
         }
     } else if app.is_search_mode() {
@@ -215,6 +221,9 @@ pub(super) fn handle_key_event(
         match key.code {
             KeyCode::Esc if app.has_active_search() => app.clear_active_search(),
             KeyCode::Enter if app.has_active_search() => app.next_match(),
+            KeyCode::Char('q') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                app.queue_fuzzy_file_picker(app.picker_dir());
+            }
             KeyCode::Char('q') => return Ok(HandleResult::Break),
             KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => {
                 if app.has_active_search() {
@@ -271,6 +280,12 @@ pub(super) fn handle_key_event(
             KeyCode::Char('/') => app.begin_search(),
             KeyCode::Char('n') => app.next_match(),
             KeyCode::Char('N') => app.prev_match(),
+            KeyCode::Char('R') => {
+                app.copy_path_to_clipboard_relative();
+            }
+            KeyCode::Char('A') => {
+                app.copy_path_to_clipboard_absolute();
+            }
             KeyCode::Char('e') if key.modifiers.contains(KeyModifiers::CONTROL) => {
                 handle_open_in_editor(terminal, app, ss, themes)?;
             }

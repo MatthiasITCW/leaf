@@ -1,5 +1,5 @@
 use crate::{
-    app::{App, EditorFlash, LinkFlash},
+    app::{App, EditorFlash, LinkFlash, PathKind},
     clipboard::{copy_to_clipboard, open_url},
     editor::{self, classify, open_in_editor, split_editor_cmd, EditorResult},
     render::{CONTENT_HORIZONTAL_PADDING, SCROLLBAR_WIDTH},
@@ -15,7 +15,52 @@ use super::DOUBLE_CLICK_THRESHOLD;
 pub(super) fn handle_mouse_event(app: &mut App, mouse: MouseEvent) -> bool {
     let prev_pos = app.mouse_position;
     app.mouse_position = (mouse.column, mouse.row);
-    let state_changed = if app.is_popup_open() {
+    let state_changed = if app.is_path_popup_open() {
+        match mouse.kind {
+            MouseEventKind::Down(MouseButton::Left) => {
+                let now = Instant::now();
+                let is_double_click = app
+                    .last_click
+                    .map(|(c, r, t)| {
+                        c == mouse.column && r == mouse.row && t.elapsed() < DOUBLE_CLICK_THRESHOLD
+                    })
+                    .unwrap_or(false);
+                app.last_click = Some((mouse.column, mouse.row, now));
+                if is_double_click {
+                    if let Some(area) = app.path_popup_rel_area {
+                        if is_in_rect(area, mouse.column, mouse.row) {
+                            app.copy_path_relative();
+                            app.last_click = None;
+                            return true;
+                        }
+                    }
+                    if let Some(area) = app.path_popup_abs_area {
+                        if is_in_rect(area, mouse.column, mouse.row) {
+                            app.copy_path_absolute();
+                            app.last_click = None;
+                            return true;
+                        }
+                    }
+                }
+                false
+            }
+            MouseEventKind::Moved => {
+                let new_hover = app
+                    .path_popup_rel_area
+                    .filter(|a| is_in_rect(*a, mouse.column, mouse.row))
+                    .map(|_| PathKind::Relative)
+                    .or_else(|| {
+                        app.path_popup_abs_area
+                            .filter(|a| is_in_rect(*a, mouse.column, mouse.row))
+                            .map(|_| PathKind::Absolute)
+                    });
+                let changed = app.path_popup_hover != new_hover;
+                app.path_popup_hover = new_hover;
+                changed
+            }
+            _ => false,
+        }
+    } else if app.is_popup_open() {
         if matches!(mouse.kind, MouseEventKind::Up(..)) {
             app.scrollbar_dragging = false;
         }
@@ -241,6 +286,10 @@ pub(super) fn scrollbar_scroll_to(app: &mut App, row: u16) {
         let scroll_pos = offset * max_scroll / (content_height - 1);
         app.scroll_to(scroll_pos);
     }
+}
+
+fn is_in_rect(rect: Rect, col: u16, row: u16) -> bool {
+    col >= rect.x && col < rect.x + rect.width && row >= rect.y && row < rect.y + rect.height
 }
 
 fn strip_unc_prefix(path: std::path::PathBuf) -> std::path::PathBuf {
