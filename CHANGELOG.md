@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- next-version -->
 
+## [[1.22.1](https://github.com/RivoLink/leaf/releases/tag/1.22.1)] - 2026-05-15
+
+### Docs
+
+- refresh README.md content ([#135](https://github.com/RivoLink/leaf/pull/135))
+
+### Changed
+
+- support directory as argument ([#139](https://github.com/RivoLink/leaf/pull/139))
+- add path copy shortcuts ([#138](https://github.com/RivoLink/leaf/pull/138))
+
 ## [[1.22.0](https://github.com/RivoLink/leaf/releases/tag/1.22.0)] - 2026-05-13
 
 ### Added
