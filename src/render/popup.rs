@@ -1,14 +1,16 @@
 use crate::{
-    app::App,
+    app::{App, PathKind, FLASH_DURATION_MS},
     cli::version_text,
     theme::{app_theme, theme_preset_label, THEME_PRESETS},
 };
 use ratatui::{
+    layout::Rect,
     style::{Color, Modifier, Style},
     text::{Line, Span},
     widgets::{Block, Borders, Clear, Padding, Paragraph},
     Frame,
 };
+use std::time::Duration;
 
 use super::centered_rect;
 
@@ -397,38 +399,79 @@ pub(crate) fn wrap_path_lines(
     result
 }
 
-pub(super) fn render_path_popup(f: &mut Frame, app: &App) {
+pub(super) fn render_path_popup(f: &mut Frame, app: &mut App) {
     let theme = app_theme();
     let label_style = Style::default()
         .fg(theme.ui.toc_accent)
         .add_modifier(Modifier::BOLD);
     let value_style = Style::default().fg(theme.ui.toc_primary_inactive);
 
-    let (relative, absolute) = if let Some(path) = app.filepath() {
-        let abs = path.canonicalize().unwrap_or_else(|_| path.to_path_buf());
-        let rel = std::env::current_dir()
-            .ok()
-            .and_then(|cwd| abs.strip_prefix(&cwd).ok().map(|p| p.to_path_buf()))
-            .unwrap_or_else(|| path.to_path_buf());
-        let abs_str = abs.display().to_string();
-        let abs_str = abs_str
-            .strip_prefix(r"\\?\")
-            .unwrap_or(&abs_str)
-            .to_string();
-        (rel.display().to_string(), abs_str)
-    } else {
-        ("(stdin)".to_string(), "(stdin)".to_string())
-    };
+    let relative = app.relative_path_string();
+    let absolute = app.absolute_path_string();
 
     const POPUP_WIDTH: usize = 78;
     const CHROME: usize = 4; // 2 borders + 2 padding
     let max_width = POPUP_WIDTH - CHROME;
-    let rel_lines = wrap_path_lines("Relative: ", &relative, max_width, label_style, value_style);
-    let abs_lines = wrap_path_lines("Absolute: ", &absolute, max_width, label_style, value_style);
-    let content_height = 1 + rel_lines.len() + abs_lines.len() + 1 + 1; // top pad + rel + abs + bottom pad + footer
-    let popup_height = content_height + 2; // borders
+    let mut rel_lines =
+        wrap_path_lines("Relative: ", &relative, max_width, label_style, value_style);
+    let mut abs_lines =
+        wrap_path_lines("Absolute: ", &absolute, max_width, label_style, value_style);
+
+    let flash_info = app
+        .path_copy_flash()
+        .and_then(|(target, success, started)| {
+            if started.elapsed() < Duration::from_millis(FLASH_DURATION_MS) {
+                Some((target.clone(), *success))
+            } else {
+                None
+            }
+        });
+
+    if let Some((ref target, success)) = flash_info {
+        let (label, fg) = if success {
+            (" ✓ copied", theme.ui.status_success_fg)
+        } else {
+            (" ✗ error", theme.ui.status_error_fg)
+        };
+        let style = Style::default().fg(fg).bg(theme.ui.toc_bg);
+        let lines_to_tag = match target {
+            PathKind::Relative => &mut rel_lines,
+            PathKind::Absolute => &mut abs_lines,
+        };
+        if let Some(first_line) = lines_to_tag.first_mut() {
+            first_line.spans.push(Span::styled(label, style));
+        }
+    }
+
+    let hover_lines = match app.path_popup_hover {
+        Some(PathKind::Relative) => Some(&mut rel_lines),
+        Some(PathKind::Absolute) => Some(&mut abs_lines),
+        None => None,
+    };
+    if let Some(lines) = hover_lines {
+        for line in lines {
+            for span in &mut line.spans {
+                if span.style == value_style {
+                    span.style = span.style.fg(theme.markdown.link_hover);
+                }
+            }
+        }
+    }
+
+    let content_height = 1 + rel_lines.len() + abs_lines.len() + 1 + 1;
+    let popup_height = content_height + 2;
 
     let area = centered_rect(POPUP_WIDTH as u16, popup_height as u16, f.area());
+
+    let inner_x = area.x + 1 + 1; // border + padding
+    let inner_width = area.width.saturating_sub(4); // 2 borders + 2 padding
+    let rel_start_y = area.y + 1 + 1; // border + top pad
+    let rel_count = rel_lines.len() as u16;
+    let abs_start_y = rel_start_y + rel_count;
+    let abs_count = abs_lines.len() as u16;
+
+    app.path_popup_rel_area = Some(Rect::new(inner_x, rel_start_y, inner_width, rel_count));
+    app.path_popup_abs_area = Some(Rect::new(inner_x, abs_start_y, inner_width, abs_count));
 
     let mut lines: Vec<Line<'static>> = Vec::new();
     lines.push(Line::from(""));
@@ -436,7 +479,11 @@ pub(super) fn render_path_popup(f: &mut Frame, app: &App) {
     lines.extend(abs_lines);
     lines.push(Line::from(""));
     lines.push(popup_footer_line(
-        &["enter close", "esc close"],
+        &[
+            "shift+r copy-relative",
+            "shift+a copy-absolute",
+            "esc close",
+        ],
         theme.ui.toc_bg,
     ));
 
