@@ -14,6 +14,7 @@ _leaf() {
         '-e[Set external editor]:editor:(nano vim vi nvim micro helix emacs jed code codium subl gedit kate mousepad zed xjed notepad notepad++)'
         '--editor[Set external editor]:editor:(nano vim vi nvim micro helix emacs jed code codium subl gedit kate mousepad zed xjed notepad notepad++)'
         '--inline[Render to stdout (no TUI)]:format:(ansi plain)'
+        '--width[Set maximum content width (min: 20)]:width:'
         '--picker[Open the file browser picker]'
         '--config[Open configuration file in editor]'
         '--update[Update leaf to the latest version]'

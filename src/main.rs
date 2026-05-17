@@ -81,6 +81,23 @@ fn read_stdin_limited<R: Read>(reader: &mut R, max_bytes: usize) -> Result<Strin
     String::from_utf8(buf).context("stdin is not valid UTF-8")
 }
 
+fn resolve_configured_width(
+    cli_width: Option<usize>,
+    config_width: Option<usize>,
+) -> Option<usize> {
+    if let Some(w) = cli_width {
+        return Some(w);
+    }
+    if let Ok(val) = std::env::var("LEAF_WIDTH") {
+        if let Ok(w) = val.parse::<usize>() {
+            if w >= 20 {
+                return Some(w);
+            }
+        }
+    }
+    config_width.map(|w| w.max(20))
+}
+
 fn append_config_warning(warning: &mut Option<String>, next: Option<String>) {
     let Some(next) = next else {
         return;
@@ -125,7 +142,8 @@ fn main() -> Result<()> {
         file_arg,
         theme: cli_theme,
         editor: cli_editor,
-        inline: inline_spec,
+        inline: mut inline_spec,
+        width: cli_width,
         ..
     } = options;
 
@@ -146,6 +164,13 @@ fn main() -> Result<()> {
     };
 
     let watch_from_config = user_config.watch.unwrap_or(false);
+    let max_width = resolve_configured_width(cli_width, user_config.width);
+
+    if let Some(ref mut spec) = inline_spec {
+        if spec.width.is_none() {
+            spec.width = max_width;
+        }
+    }
 
     let resolved_editor =
         editor::resolve_editor(cli_editor.as_deref(), user_config.editor.as_deref());
@@ -283,6 +308,7 @@ fn main() -> Result<()> {
     app.set_link_spans(link_spans);
     app.set_last_content_hash(last_content_hash);
     app.set_watch_from_config(watch_from_config);
+    app.set_max_width(max_width);
     app.set_extras(user_config.extras);
     app.set_file_mode(file_mode);
     app.set_editor_config(Some(resolved_editor));

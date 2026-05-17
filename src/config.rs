@@ -16,6 +16,7 @@ pub(crate) struct LeafConfig {
     pub(crate) theme: Option<String>,
     pub(crate) editor: Option<String>,
     pub(crate) watch: Option<bool>,
+    pub(crate) width: Option<usize>,
     pub(crate) extras: Vec<String>,
     pub(crate) themes: BTreeMap<String, CustomThemeConfig>,
     #[serde(skip)]
@@ -40,13 +41,31 @@ pub(crate) fn load_config() -> (LeafConfig, Option<String>) {
         }
     };
     config.config_dir = path.parent().map(Path::to_path_buf);
-    let warning = config
+    let theme_warning = config
         .theme
         .as_deref()
         .and_then(|name| {
             resolve_theme_selection(name, &config.themes, config.config_dir.as_deref()).err()
         })
         .map(|message| format!("{message} in config, using default"));
+    let width_warning = config.width.and_then(|w| {
+        if w < 20 {
+            Some(format!(
+                "width={w} in config is below minimum (20), will use 20"
+            ))
+        } else {
+            None
+        }
+    });
+    let warning = [theme_warning, width_warning]
+        .into_iter()
+        .flatten()
+        .collect::<Vec<_>>();
+    let warning = if warning.is_empty() {
+        None
+    } else {
+        Some(warning.join("; "))
+    };
     (config, warning)
 }
 

@@ -124,6 +124,7 @@ pub(crate) struct App {
     numkey_cycle: Option<NumkeyCycleState>,
     reverse_mode: bool,
     pub(super) file_mode: bool,
+    max_width: Option<usize>,
 }
 
 impl App {
@@ -259,6 +260,7 @@ impl App {
             numkey_cycle: None,
             reverse_mode: false,
             file_mode: false,
+            max_width: None,
         };
         app.store_current_theme_preview();
         app.refresh_static_caches();
@@ -271,6 +273,14 @@ impl App {
 
     pub(crate) fn set_file_mode(&mut self, file_mode: bool) {
         self.file_mode = file_mode;
+    }
+
+    pub(crate) fn set_max_width(&mut self, max_width: Option<usize>) {
+        self.max_width = max_width;
+    }
+
+    pub(crate) fn max_width(&self) -> Option<usize> {
+        self.max_width
     }
 
     pub(crate) fn set_watch_from_config(&mut self, value: bool) {

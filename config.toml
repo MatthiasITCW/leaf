@@ -38,6 +38,14 @@ theme = "ocean"
 # Falls back to: LEAF_EDITOR > VISUAL > EDITOR > nano (notepad on Windows)
 # editor = "nano"
 
+# Maximum content width (number of columns)
+# Limits how wide the rendered content can be.
+# Useful on wide terminals for better readability.
+# Priority: --width flag > LEAF_WIDTH > this setting > terminal width
+# Minimum: 20
+# Default: terminal width (no limit)
+# width = 80
+
 # Watch mode: automatically reload when the file changes
 # Only applies when opening a file (ignored for stdin)
 # Default: false
