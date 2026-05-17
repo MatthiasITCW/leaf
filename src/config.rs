@@ -50,7 +50,8 @@ pub(crate) fn load_config(overrides: &CliOverrides) -> (LeafConfig, Option<Strin
 
     let mut warnings: Vec<String> = Vec::new();
 
-    if overrides.theme.is_none() {
+    let leaf_theme_overrides = std::env::var("LEAF_THEME").is_ok_and(|s| !s.is_empty());
+    if overrides.theme.is_none() && !leaf_theme_overrides {
         if let Some(ref name) = config.theme {
             if let Err(message) =
                 resolve_theme_selection(name, &config.themes, config.config_dir.as_deref())

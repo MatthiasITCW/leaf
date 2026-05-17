@@ -198,10 +198,6 @@ pub(crate) fn resolve_editor(cli_editor: Option<&str>, config_editor: Option<&st
         e.to_string()
     } else if let Some(e) = std::env::var("LEAF_EDITOR").ok().filter(|s| !s.is_empty()) {
         e
-    } else if let Some(e) = std::env::var("VISUAL").ok().filter(|s| !s.is_empty()) {
-        e
-    } else if let Some(e) = std::env::var("EDITOR").ok().filter(|s| !s.is_empty()) {
-        e
     } else if let Some(e) = config_editor {
         e.to_string()
     } else {
