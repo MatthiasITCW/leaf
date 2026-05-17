@@ -1,6 +1,12 @@
-use anyhow::Result;
+use anyhow::{bail, Result};
 
 use crate::inline::{self, InlineSpec};
+
+#[derive(Debug, PartialEq, Eq)]
+pub(crate) struct AutoCompleteArg {
+    pub(crate) shell: Option<String>,
+    pub(crate) dump: bool,
+}
 
 #[derive(Debug, Default, PartialEq, Eq)]
 pub(crate) struct CliOptions {
@@ -8,7 +14,7 @@ pub(crate) struct CliOptions {
     pub(crate) watch: bool,
     pub(crate) update: bool,
     pub(crate) config: bool,
-    pub(crate) auto_complete: bool,
+    pub(crate) auto_complete: Option<AutoCompleteArg>,
     pub(crate) debug_input: bool,
     pub(crate) print_help: bool,
     pub(crate) print_version: bool,
@@ -25,16 +31,16 @@ pub(crate) fn usage_text() -> &'static str {
      \x20       echo '# Hello' | leaf\n\
      \n\
      Options:\n\
-     \x20 -h, --help                 Show this help message and exit\n\
-     \x20 -V, --version              Show version information and exit\n\
-     \x20 -w, --watch                Watch the file for changes and reload automatically\n\
-     \x20     --theme <NAME>         Set color theme preset or custom config theme\n\
-     \x20 -e, --editor <NAME>        Set external editor (nano|vim|code|subl|emacs)\n\
-     \x20     --inline [SPEC]        Render to stdout (no TUI) [ansi|plain][:<width>]\n\
-     \x20     --picker               Open the file browser picker\n\
-     \x20     --config               Open configuration file in editor\n\
-     \x20     --update               Update leaf to the latest version\n\
-     \x20     --auto-complete        Install shell completions for leaf"
+     \x20 -h, --help                   Show this help message and exit\n\
+     \x20 -V, --version                Show version information and exit\n\
+     \x20 -w, --watch                  Watch the file for changes and reload automatically\n\
+     \x20     --theme <NAME>           Set color theme preset or custom config theme\n\
+     \x20 -e, --editor <NAME>          Set external editor (nano|vim|code|subl|emacs)\n\
+     \x20     --inline [SPEC]          Render to stdout (no TUI) [ansi|plain][:<width>]\n\
+     \x20     --picker                 Open the file browser picker\n\
+     \x20     --config                 Open configuration file in editor\n\
+     \x20     --update                 Update leaf to the latest version\n\
+     \x20     --auto-complete [SPEC]   Install or dump shell completions [bash|zsh|fish|powershell][:dump]"
 }
 
 pub(crate) fn version_text() -> &'static str {
@@ -69,7 +75,19 @@ pub(crate) fn parse_cli(args: &[String]) -> Result<CliOptions> {
             "--watch" | "-w" => options.watch = true,
             "--update" => options.update = true,
             "--config" => options.config = true,
-            "--auto-complete" => options.auto_complete = true,
+            "--auto-complete" => {
+                let ac_arg = match iter.peek() {
+                    Some(next) if !next.starts_with('-') => {
+                        let value = iter.next().unwrap();
+                        parse_auto_complete_value(value)?
+                    }
+                    _ => AutoCompleteArg {
+                        shell: None,
+                        dump: false,
+                    },
+                };
+                options.auto_complete = Some(ac_arg);
+            }
             "--debug-input" => options.debug_input = true,
             "--help" | "-h" => options.print_help = true,
             "--version" | "-V" => options.print_version = true,
@@ -119,7 +137,7 @@ pub(crate) fn parse_cli(args: &[String]) -> Result<CliOptions> {
     let standalone = [
         (options.update, "--update"),
         (options.config, "--config"),
-        (options.auto_complete, "--auto-complete"),
+        (options.auto_complete.is_some(), "--auto-complete"),
     ];
     let standalone_count = standalone.iter().filter(|(set, _)| *set).count();
     for &(set, name) in &standalone {
@@ -156,4 +174,34 @@ fn parse_theme_name(name: &str) -> Result<String> {
         anyhow::bail!("Missing value for --theme");
     }
     Ok(name.to_string())
+}
+
+const KNOWN_SHELLS: &[&str] = &["bash", "zsh", "fish", "powershell"];
+
+fn parse_auto_complete_value(s: &str) -> Result<AutoCompleteArg> {
+    if s == "dump" {
+        return Ok(AutoCompleteArg {
+            shell: None,
+            dump: true,
+        });
+    }
+    if let Some(prefix) = s.strip_suffix(":dump") {
+        if KNOWN_SHELLS.contains(&prefix) {
+            return Ok(AutoCompleteArg {
+                shell: Some(prefix.to_string()),
+                dump: true,
+            });
+        }
+        bail!("Unknown shell: '{prefix}'. Expected: bash, zsh, fish, powershell");
+    }
+    if KNOWN_SHELLS.contains(&s) {
+        return Ok(AutoCompleteArg {
+            shell: Some(s.to_string()),
+            dump: false,
+        });
+    }
+    bail!(
+        "Invalid argument for --auto-complete: '{s}'. \
+         Expected: bash, zsh, fish, powershell, dump, or SHELL:dump"
+    );
 }
