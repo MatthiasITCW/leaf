@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- next-version -->
 
+## [[1.22.2](https://github.com/RivoLink/leaf/releases/tag/1.22.2)] - 2026-05-17
+
+### Fixed
+
+- config warnings on CLI override ([#146](https://github.com/RivoLink/leaf/pull/146))
+- completions shell/os check ([#145](https://github.com/RivoLink/leaf/pull/145))
+
+### Changed
+
+- refacto env vars ([#147](https://github.com/RivoLink/leaf/pull/147))
+- configurable content width ([#144](https://github.com/RivoLink/leaf/pull/144))
+- auto-complete shell and dump ([#143](https://github.com/RivoLink/leaf/pull/143))
+
 ## [[1.22.1](https://github.com/RivoLink/leaf/releases/tag/1.22.1)] - 2026-05-15
 
 ### Docs
