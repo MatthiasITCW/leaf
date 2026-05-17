@@ -22,6 +22,7 @@ pub(crate) struct CliOptions {
     pub(crate) theme: Option<String>,
     pub(crate) editor: Option<String>,
     pub(crate) inline: Option<InlineSpec>,
+    pub(crate) width: Option<usize>,
 }
 
 pub(crate) fn usage_text() -> &'static str {
@@ -37,6 +38,7 @@ pub(crate) fn usage_text() -> &'static str {
      \x20     --theme <NAME>           Set color theme preset or custom config theme\n\
      \x20 -e, --editor <NAME>          Set external editor (nano|vim|code|subl|emacs)\n\
      \x20     --inline [SPEC]          Render to stdout (no TUI) [ansi|plain][:<width>]\n\
+     \x20     --width <N>              Set maximum content width (min: 20)\n\
      \x20     --picker                 Open the file browser picker\n\
      \x20     --config                 Open configuration file in editor\n\
      \x20     --update                 Update leaf to the latest version\n\
@@ -127,6 +129,16 @@ pub(crate) fn parse_cli(args: &[String]) -> Result<CliOptions> {
                 let value = &arg["--inline=".len()..];
                 options.inline = Some(inline::parse_inline_spec(value)?);
             }
+            "--width" => {
+                let Some(value) = iter.next() else {
+                    anyhow::bail!("Missing value for --width");
+                };
+                options.width = Some(parse_width_value(value)?);
+            }
+            _ if arg.starts_with("--width=") => {
+                let value = &arg["--width=".len()..];
+                options.width = Some(parse_width_value(value)?);
+            }
             "--" => positional_only = true,
             _ if arg.starts_with('-') => anyhow::bail!("Unknown flag: {arg}"),
             _ if options.file_arg.is_none() => options.file_arg = Some(arg.clone()),
@@ -204,4 +216,15 @@ fn parse_auto_complete_value(s: &str) -> Result<AutoCompleteArg> {
         "Invalid argument for --auto-complete: '{s}'. \
          Expected: bash, zsh, fish, powershell, dump, or SHELL:dump"
     );
+}
+
+fn parse_width_value(s: &str) -> Result<usize> {
+    let w: usize = s
+        .trim()
+        .parse()
+        .map_err(|_| anyhow::anyhow!("Invalid width: {s}"))?;
+    if w < 20 {
+        bail!("Width must be at least 20");
+    }
+    Ok(w)
 }
