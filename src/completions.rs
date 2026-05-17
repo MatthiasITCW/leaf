@@ -164,16 +164,35 @@ pub(crate) fn run_auto_complete(arg: &AutoCompleteArg) -> Result<()> {
     install_completions(&shell)
 }
 
+fn check_shell_os_compat(shell: &Shell) -> Result<()> {
+    #[cfg(target_os = "windows")]
+    if !matches!(shell, Shell::Pwsh) {
+        let name = match shell {
+            Shell::Bash => "bash",
+            Shell::Zsh => "zsh",
+            Shell::Fish => "fish",
+            Shell::Pwsh => unreachable!(),
+        };
+        bail!("Shell '{name}' is not supported. Use 'powershell' instead.");
+    }
+    #[cfg(not(target_os = "windows"))]
+    if matches!(shell, Shell::Pwsh) {
+        bail!("Shell 'powershell' is not supported. Use bash, zsh, or fish.");
+    }
+    Ok(())
+}
+
 fn install_completions(shell: &Shell) -> Result<()> {
+    check_shell_os_compat(shell)?;
     let content = completion_content(shell);
 
     match shell {
         Shell::Pwsh => {
+            let dest = write_completion(&completion_dir()?, "leaf.ps1", content)?;
+            println!("Completion file installed: {}", dest.display());
+
             #[cfg(target_os = "windows")]
             {
-                let dest = write_completion(&completion_dir()?, "leaf.ps1", content)?;
-                println!("Completion file installed: {}", dest.display());
-
                 let source_line = format!(". {}", dest.display());
                 for rc in pwsh_profile_paths()? {
                     if add_source_line(&rc, &source_line)? {
@@ -184,8 +203,6 @@ fn install_completions(shell: &Shell) -> Result<()> {
                 }
                 println!("\nRestart PowerShell to activate completions.");
             }
-            #[cfg(not(target_os = "windows"))]
-            bail!("PowerShell completion is only supported on Windows");
         }
         Shell::Zsh | Shell::Bash => {
             let filename = match shell {
