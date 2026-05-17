@@ -114,8 +114,8 @@ fn main() -> Result<()> {
         config::run_config()?;
         return Ok(());
     }
-    if options.auto_complete {
-        completions::install_completions()?;
+    if let Some(ref ac_arg) = options.auto_complete {
+        completions::run_auto_complete(ac_arg)?;
         return Ok(());
     }
     let CliOptions {

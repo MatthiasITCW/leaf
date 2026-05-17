@@ -2,13 +2,13 @@ use std::path::PathBuf;
 
 use anyhow::{bail, Context, Result};
 
-#[cfg(target_os = "windows")]
+use crate::cli::AutoCompleteArg;
+
 const PS1_COMPLETION: &str = include_str!("../completions/leaf.ps1");
 const ZSH_COMPLETION: &str = include_str!("../completions/leaf.zsh");
 const BASH_COMPLETION: &str = include_str!("../completions/leaf.bash");
 const FISH_COMPLETION: &str = include_str!("../completions/leaf.fish");
 
-#[allow(dead_code)]
 enum Shell {
     Pwsh,
     Zsh,
@@ -131,15 +131,47 @@ fn add_source_line(rc: &std::path::Path, line: &str) -> Result<bool> {
     Ok(true)
 }
 
-pub(crate) fn install_completions() -> Result<()> {
-    let shell = detect_shell()?;
+fn parse_shell(name: &str) -> Result<Shell> {
+    match name {
+        "bash" => Ok(Shell::Bash),
+        "zsh" => Ok(Shell::Zsh),
+        "fish" => Ok(Shell::Fish),
+        "powershell" => Ok(Shell::Pwsh),
+        _ => bail!("Unknown shell: '{name}'"),
+    }
+}
+
+fn completion_content(shell: &Shell) -> &'static str {
+    match shell {
+        Shell::Bash => BASH_COMPLETION,
+        Shell::Zsh => ZSH_COMPLETION,
+        Shell::Fish => FISH_COMPLETION,
+        Shell::Pwsh => PS1_COMPLETION,
+    }
+}
+
+pub(crate) fn run_auto_complete(arg: &AutoCompleteArg) -> Result<()> {
+    let shell = match &arg.shell {
+        Some(name) => parse_shell(name)?,
+        None => detect_shell()?,
+    };
+
+    if arg.dump {
+        print!("{}", completion_content(&shell));
+        return Ok(());
+    }
+
+    install_completions(&shell)
+}
+
+fn install_completions(shell: &Shell) -> Result<()> {
+    let content = completion_content(shell);
 
     match shell {
         Shell::Pwsh => {
             #[cfg(target_os = "windows")]
             {
-                let dir = completion_dir()?;
-                let dest = write_completion(&dir, "leaf.ps1", PS1_COMPLETION)?;
+                let dest = write_completion(&completion_dir()?, "leaf.ps1", content)?;
                 println!("Completion file installed: {}", dest.display());
 
                 let source_line = format!(". {}", dest.display());
@@ -156,15 +188,15 @@ pub(crate) fn install_completions() -> Result<()> {
             bail!("PowerShell completion is only supported on Windows");
         }
         Shell::Zsh | Shell::Bash => {
-            let (filename, content) = match shell {
-                Shell::Zsh => ("_leaf", ZSH_COMPLETION),
-                _ => ("leaf.bash", BASH_COMPLETION),
+            let filename = match shell {
+                Shell::Zsh => "_leaf",
+                _ => "leaf.bash",
             };
             let dest = write_completion(&completion_dir()?, filename, content)?;
             println!("Completion file installed: {}", dest.display());
 
             let source_line = format!("source {}", dest.display());
-            let rc = rc_path(&shell)?;
+            let rc = rc_path(shell)?;
             if add_source_line(&rc, &source_line)? {
                 println!("Added to {}", rc.display());
             } else {
@@ -173,7 +205,7 @@ pub(crate) fn install_completions() -> Result<()> {
             println!("\nRestart your shell or run: source {}", rc.display());
         }
         Shell::Fish => {
-            let dest = write_completion(&fish_completion_dir()?, "leaf.fish", FISH_COMPLETION)?;
+            let dest = write_completion(&fish_completion_dir()?, "leaf.fish", content)?;
             println!("Completion file installed: {}", dest.display());
             println!("\nCompletions are available in new fish sessions automatically.");
         }
