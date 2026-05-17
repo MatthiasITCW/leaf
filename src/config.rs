@@ -23,7 +23,13 @@ pub(crate) struct LeafConfig {
     pub(crate) config_dir: Option<PathBuf>,
 }
 
-pub(crate) fn load_config() -> (LeafConfig, Option<String>) {
+#[derive(Default)]
+pub(crate) struct CliOverrides {
+    pub(crate) width: Option<usize>,
+    pub(crate) theme: Option<String>,
+}
+
+pub(crate) fn load_config(overrides: &CliOverrides) -> (LeafConfig, Option<String>) {
     let Some(path) = config_path() else {
         return (LeafConfig::default(), None);
     };
@@ -41,30 +47,33 @@ pub(crate) fn load_config() -> (LeafConfig, Option<String>) {
         }
     };
     config.config_dir = path.parent().map(Path::to_path_buf);
-    let theme_warning = config
-        .theme
-        .as_deref()
-        .and_then(|name| {
-            resolve_theme_selection(name, &config.themes, config.config_dir.as_deref()).err()
-        })
-        .map(|message| format!("{message} in config, using default"));
-    let width_warning = config.width.and_then(|w| {
-        if w < 20 {
-            Some(format!(
-                "width={w} in config is below minimum (20), will use 20"
-            ))
-        } else {
-            None
+
+    let mut warnings: Vec<String> = Vec::new();
+
+    if overrides.theme.is_none() {
+        if let Some(ref name) = config.theme {
+            if let Err(message) =
+                resolve_theme_selection(name, &config.themes, config.config_dir.as_deref())
+            {
+                warnings.push(format!("{message} in config, using default"));
+            }
         }
-    });
-    let warning = [theme_warning, width_warning]
-        .into_iter()
-        .flatten()
-        .collect::<Vec<_>>();
-    let warning = if warning.is_empty() {
+    }
+
+    let leaf_width_overrides =
+        std::env::var("LEAF_WIDTH").is_ok_and(|v| v.parse::<usize>().is_ok_and(|w| w >= 20));
+    if overrides.width.is_none() && !leaf_width_overrides {
+        if let Some(w) = config.width.filter(|&w| w < 20) {
+            warnings.push(format!(
+                "width={w} in config is below minimum (20), will use 20"
+            ));
+        }
+    }
+
+    let warning = if warnings.is_empty() {
         None
     } else {
-        Some(warning.join("; "))
+        Some(warnings.join("; "))
     };
     (config, warning)
 }
@@ -108,7 +117,7 @@ fn write_default_config(dest: &Path) -> anyhow::Result<()> {
 }
 
 fn open_config_in_editor(path: &Path) -> anyhow::Result<()> {
-    let (config, _) = load_config();
+    let (config, _) = load_config(&CliOverrides::default());
     let editor = crate::editor::resolve_editor(None, config.editor.as_deref());
 
     if try_launch_editor(&editor, path) {

@@ -147,7 +147,11 @@ fn main() -> Result<()> {
         ..
     } = options;
 
-    let (user_config, mut config_warning) = config::load_config();
+    let overrides = config::CliOverrides {
+        width: cli_width,
+        theme: cli_theme.clone(),
+    };
+    let (user_config, mut config_warning) = config::load_config(&overrides);
 
     let theme_selection = if let Some(theme_name) = cli_theme.as_deref() {
         resolve_theme_selection(theme_name, &user_config.themes, None)
