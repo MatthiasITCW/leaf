@@ -156,6 +156,12 @@ fn main() -> Result<()> {
     let theme_selection = if let Some(theme_name) = cli_theme.as_deref() {
         resolve_theme_selection(theme_name, &user_config.themes, None)
             .map_err(|message| anyhow::anyhow!("{message}"))?
+    } else if let Some(theme_name) = std::env::var("LEAF_THEME")
+        .ok()
+        .filter(|s| !s.is_empty())
+        .as_deref()
+    {
+        resolve_theme_selection(theme_name, &user_config.themes, None).unwrap_or_default()
     } else if let Some(theme_name) = user_config.theme.as_deref() {
         resolve_theme_selection(
             theme_name,

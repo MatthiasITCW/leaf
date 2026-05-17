@@ -14,6 +14,7 @@
 # Built-in themes: arctic, forest, ocean, solarized-dark
 # Or set this to a custom theme file path.
 # Relative paths are resolved from this config file's directory.
+# Priority: --theme flag > LEAF_THEME > this setting > ocean
 # Default: ocean
 theme = "ocean"
 
@@ -35,7 +36,7 @@ theme = "ocean"
 # For paths with spaces AND arguments, use inner quotes:
 # editor = '"C:\Program Files\Notepad++\notepad++.exe" --some-flag'
 #
-# Falls back to: LEAF_EDITOR > VISUAL > EDITOR > nano (notepad on Windows)
+# Priority: --editor flag > LEAF_EDITOR > this setting > nano (notepad on Windows)
 # editor = "nano"
 
 # Maximum content width (number of columns)
