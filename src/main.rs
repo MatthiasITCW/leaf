@@ -292,8 +292,14 @@ fn main() -> Result<()> {
         let format = inline::resolve_format(spec, is_tty);
 
         let at = app_theme();
-        let (lines, _, _) =
+        let (mut lines, _, _) =
             parse_markdown_with_width(&src, &ss, &theme, width, &at.markdown, file_mode);
+
+        while lines.last().is_some_and(|l| {
+            l.spans.is_empty() || l.spans.iter().all(|s| s.content.trim().is_empty())
+        }) {
+            lines.pop();
+        }
 
         let stdout = io::stdout();
         let mut writer = io::BufWriter::new(stdout.lock());
