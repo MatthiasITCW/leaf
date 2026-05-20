@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- next-version -->
 
+## [[1.22.3](https://github.com/RivoLink/leaf/releases/tag/1.22.3)] - 2026-05-20
+
+### Fixed
+
+- trailing padding in inline mode ([#149](https://github.com/RivoLink/leaf/pull/149))
+
 ## [[1.22.2](https://github.com/RivoLink/leaf/releases/tag/1.22.2)] - 2026-05-17
 
 ### Fixed
