@@ -18,6 +18,7 @@ pub(super) enum ListKind {
 pub(super) struct ItemState {
     pub(super) marker_emitted: bool,
     pub(super) continuation_indent: usize,
+    pub(super) checkbox: Option<bool>,
 }
 
 pub(super) fn list_item_prefix(
@@ -39,24 +40,32 @@ pub(super) fn list_item_prefix(
     let depth = list_stack.len();
     prefix.push(Span::raw("  ".repeat(depth.saturating_sub(1))));
 
-    let marker = match list_stack.last().copied().unwrap_or(ListKind::Unordered) {
-        ListKind::Unordered => match depth {
-            1 => "• ".to_string(),
-            2 => "◦ ".to_string(),
-            _ => "▸ ".to_string(),
+    let marker = match item.checkbox {
+        Some(true) => "☑ ".to_string(),
+        Some(false) => "☐ ".to_string(),
+        None => match list_stack.last().copied().unwrap_or(ListKind::Unordered) {
+            ListKind::Unordered => match depth {
+                1 => "• ".to_string(),
+                2 => "◦ ".to_string(),
+                _ => "▸ ".to_string(),
+            },
+            ListKind::Ordered(n) => format!("{n}. "),
         },
-        ListKind::Ordered(n) => format!("{n}. "),
     };
     item.continuation_indent = "  ".repeat(depth.saturating_sub(1)).len() + display_width(&marker);
     item.marker_emitted = true;
 
-    let marker_style = match list_stack.last().copied().unwrap_or(ListKind::Unordered) {
-        ListKind::Unordered => match depth {
-            1 => Style::default().fg(theme.list_level_1),
-            2 => Style::default().fg(theme.list_level_2),
-            _ => Style::default().fg(theme.list_level_3),
+    let marker_style = match item.checkbox {
+        Some(true) => Style::default().fg(theme.task_checked),
+        Some(false) => Style::default().fg(theme.task_unchecked),
+        None => match list_stack.last().copied().unwrap_or(ListKind::Unordered) {
+            ListKind::Unordered => match depth {
+                1 => Style::default().fg(theme.list_level_1),
+                2 => Style::default().fg(theme.list_level_2),
+                _ => Style::default().fg(theme.list_level_3),
+            },
+            ListKind::Ordered(_) => Style::default().fg(theme.ordered_list),
         },
-        ListKind::Ordered(_) => Style::default().fg(theme.ordered_list),
     };
     prefix.push(Span::styled(marker, marker_style));
     prefix
@@ -110,6 +119,7 @@ pub(super) fn start_item(item_stack: &mut Vec<ItemState>) {
     item_stack.push(ItemState {
         marker_emitted: false,
         continuation_indent: 0,
+        checkbox: None,
     });
 }
 

@@ -166,6 +166,8 @@ theme_overrides!(MarkdownThemeOverrides for MarkdownTheme {
     mermaid_block_fg,
     mark_fg,
     mark_bg,
+    task_checked,
+    task_unchecked,
 });
 
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Eq)]
