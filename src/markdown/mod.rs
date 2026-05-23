@@ -5,6 +5,7 @@ mod highlight;
 mod latex;
 mod links;
 mod lists;
+mod markers;
 mod mermaid;
 mod spans;
 mod syntax;
@@ -46,6 +47,7 @@ use links::build_link_spans;
 use lists::{
     end_item, end_list, flush_list_item_spans, start_item, start_list, ItemState, ListKind,
 };
+use markers::push_custom_marker_spans;
 use spans::{
     handle_inline_style_event, inline_text_style, push_inline_code_span, push_inline_latex_span,
     InlineStyleState,
@@ -173,6 +175,8 @@ fn rule_width(render_width: usize, indent: usize) -> usize {
     render_width.saturating_sub(indent).max(8)
 }
 
+const CUSTOM_MARKERS: &[markers::CustomMarker] = &[markers::MARK_MARKER];
+
 fn push_text_event(
     spans: &mut Vec<Span<'static>>,
     code_buf: &mut String,
@@ -184,12 +188,11 @@ fn push_text_event(
 ) {
     if in_code {
         code_buf.push_str(text);
-    } else {
-        spans.push(Span::styled(
-            text.to_string(),
-            inline_text_style(theme, blockquote_depth, inline),
-        ));
+        return;
     }
+
+    let fallback = inline_text_style(theme, blockquote_depth, inline);
+    push_custom_marker_spans(text, CUSTOM_MARKERS, fallback, theme, spans);
 }
 
 pub(crate) fn parse_markdown(

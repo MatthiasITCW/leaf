@@ -41,12 +41,15 @@ pub(super) enum CellFragment {
     Code(String, bool),
     InlineMath(String, bool),
     LinkMarker(CellInlineStyle),
+    Mark(String, bool),
 }
 
 impl CellFragment {
     pub(super) fn rendered_text(&self) -> String {
         match self {
-            CellFragment::Text(t, _, _) | CellFragment::Code(t, _) => t.clone(),
+            CellFragment::Text(t, _, _) | CellFragment::Code(t, _) | CellFragment::Mark(t, _) => {
+                t.clone()
+            }
             CellFragment::InlineMath(t, _) => latex::to_unicode(t),
             CellFragment::LinkMarker(_) => super::LINK_MARKER.to_string(),
         }
@@ -253,13 +256,28 @@ impl TableBuf {
         }
     }
     fn push_text(&mut self, t: &str) {
+        use super::markers::{split_marker_segments, MarkerSegment, MARK_MARKER};
+
         let starts_no_ws = !t.is_empty() && !t.starts_with(char::is_whitespace);
         let adjacent = starts_no_ws && self.prev_ends_without_ws();
-        self.current_cell.push(CellFragment::Text(
-            t.to_string(),
-            self.inline_style,
-            adjacent,
-        ));
+        let style = self.inline_style;
+        let segments = split_marker_segments(t, &[MARK_MARKER]);
+
+        let mut first = true;
+        for seg in &segments {
+            let adj_flag = first && adjacent;
+            first = false;
+            match seg {
+                MarkerSegment::Text(s) => {
+                    self.current_cell
+                        .push(CellFragment::Text(s.to_string(), style, adj_flag));
+                }
+                MarkerSegment::Mark(s) => {
+                    self.current_cell
+                        .push(CellFragment::Mark(s.to_string(), adj_flag));
+                }
+            }
+        }
     }
     fn push_link_marker(&mut self) {
         self.current_cell

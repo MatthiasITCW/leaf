@@ -156,7 +156,9 @@ pub(super) fn wrap_table_cell(frags: &[CellFragment], width: usize) -> Vec<Vec<C
                 current_width += 1;
                 glue = true;
             }
-            CellFragment::Code(_, adj) | CellFragment::InlineMath(_, adj) => {
+            CellFragment::Code(_, adj)
+            | CellFragment::InlineMath(_, adj)
+            | CellFragment::Mark(_, adj) => {
                 let frag_width = frag.display_width();
                 let adj = *adj;
                 let sep = if current_width == 0 || adj { 0 } else { 1 };
@@ -224,11 +226,14 @@ pub(super) fn align_cell(
                 spans.push(Span::styled(LINK_MARKER, style));
                 content_width += display_width(LINK_MARKER);
             }
-            CellFragment::Code(_, _) | CellFragment::InlineMath(_, _) => {
+            CellFragment::Code(_, _)
+            | CellFragment::InlineMath(_, _)
+            | CellFragment::Mark(_, _) => {
                 let styled = format!(" {} ", frag.rendered_text());
                 content_width += display_width(&styled);
                 let (fg, bg) = match frag {
                     CellFragment::Code(..) => (theme.inline_code_fg, theme.inline_code_bg),
+                    CellFragment::Mark(..) => (theme.mark_fg, theme.mark_bg),
                     _ => (theme.latex_inline_fg, theme.latex_inline_bg),
                 };
                 spans.push(Span::styled(styled, Style::default().fg(fg).bg(bg)));

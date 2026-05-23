@@ -113,6 +113,8 @@ pub(super) const BASE_LIGHT_MARKDOWN: MarkdownTheme = MarkdownTheme {
     mermaid_arrow: Color::Rgb(90, 120, 150),
     mermaid_label: Color::Rgb(28, 140, 120),
     mermaid_block_fg: Color::Rgb(68, 108, 118),
+    mark_fg: Color::Rgb(58, 68, 78),
+    mark_bg: Color::Rgb(255, 248, 140),
 };
 
 pub(super) const BASE_DARK_MARKDOWN: MarkdownTheme = MarkdownTheme {
@@ -152,6 +154,8 @@ pub(super) const BASE_DARK_MARKDOWN: MarkdownTheme = MarkdownTheme {
     mermaid_arrow: Color::Rgb(120, 160, 200),
     mermaid_label: Color::Rgb(100, 210, 180),
     mermaid_block_fg: Color::Rgb(160, 190, 200),
+    mark_fg: Color::Rgb(208, 210, 218),
+    mark_bg: Color::Rgb(80, 68, 20),
 };
 
 pub(crate) const ARCTIC_THEME: AppTheme = AppTheme {
@@ -234,6 +238,8 @@ pub(crate) const FOREST_THEME: AppTheme = AppTheme {
         mermaid_arrow: Color::Rgb(100, 170, 200),
         mermaid_label: Color::Rgb(90, 200, 160),
         mermaid_block_fg: Color::Rgb(150, 185, 170),
+        mark_fg: Color::Rgb(212, 218, 212),
+        mark_bg: Color::Rgb(72, 62, 18),
     },
 };
 
@@ -317,5 +323,7 @@ pub(crate) const SOLARIZED_DARK_THEME: AppTheme = AppTheme {
         mermaid_arrow: Color::Rgb(38, 139, 210),
         mermaid_label: Color::Rgb(88, 182, 172),
         mermaid_block_fg: Color::Rgb(131, 148, 150),
+        mark_fg: Color::Rgb(147, 161, 161),
+        mark_bg: Color::Rgb(62, 54, 8),
     },
 };
