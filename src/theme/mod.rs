@@ -112,6 +112,8 @@ pub(crate) struct MarkdownTheme {
     pub(crate) mermaid_block_fg: Color,
     pub(crate) mark_fg: Color,
     pub(crate) mark_bg: Color,
+    pub(crate) task_checked: Color,
+    pub(crate) task_unchecked: Color,
 }
 
 pub(crate) const DEFAULT_PRESET: ThemePreset = ThemePreset::OceanDark;

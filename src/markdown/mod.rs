@@ -431,6 +431,11 @@ pub(crate) fn parse_markdown_with_width(
                 );
                 last_block = LastBlock::Other;
             }
+            MdEvent::TaskListMarker(checked) => {
+                if let Some(item) = item_stack.last_mut() {
+                    item.checkbox = Some(checked);
+                }
+            }
             _ => {}
         }
     }
