@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- next-version -->
 
+## [[1.23.0](https://github.com/RivoLink/leaf/releases/tag/1.23.0)] - 2026-05-24
+
+### Added
+
+- GitHub alert callouts ([#153](https://github.com/RivoLink/leaf/pull/153))
+- task list checkboxes ([#152](https://github.com/RivoLink/leaf/pull/152))
+- text highlighting with ==mark== syntax ([#151](https://github.com/RivoLink/leaf/pull/151))
+
 ## [[1.22.3](https://github.com/RivoLink/leaf/releases/tag/1.22.3)] - 2026-05-20
 
 ### Fixed
